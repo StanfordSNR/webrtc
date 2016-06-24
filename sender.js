@@ -9,18 +9,24 @@ var localPC;
 var localOffer;
 var remoteAnswer;
 var offerOptions = {
-  offerToReceiveVideo: 0
+  offerToReceiveVideo: 1
 };
 
-function message(text) {
+function message(action, text) {
   this.from = localAddr;
   this.to = remoteAddr;
+  this.action = action;
   this.text = text;
 }
 
 function sendOffer() {
-  var servers = null;
-  localPC = new RTCPeerConnection(servers);
+  localPC = new RTCPeerConnection(null);
+
+  localPC.onicecandidate = function(e) {
+    if (e.candidate) {
+      socket.emit('msg', new message('ice', e.candidate));
+    }
+  }
 
   if (navigator.getUserMedia) {
     navigator.getUserMedia({video:true}, onSuccess, onFail);
@@ -39,7 +45,7 @@ function onSuccess(stream) {
       console.log('Created offer', offer);
       localOffer = offer;
       setOffer();
-      socket.emit('msg', new message(localOffer));
+      socket.emit('msg', new message('offer', localOffer));
     });
 }
 
@@ -55,16 +61,36 @@ function setAnswer() {
   localPC.setRemoteDescription(remoteAnswer);
 }
 
+function handleHello(data) {
+  if (!remoteAddr) {
+    remoteAddr = data.from;
+    sendOffer();
+  }
+}
+
+function handleAnswer(data) {
+  console.log('Received answer from receiver', data.text);
+  remoteAnswer = data.text;
+  setAnswer();
+}
+
+function handleIce(data) {
+  localPC.addIceCandidate(new RTCIceCandidate(data.text));
+}
+
 socket.on('connect', function() {
   socket.emit('addr', localAddr);
   socket.on('msg', function(data) {
-    if (!remoteAddr) {
-      remoteAddr = data.from;
-      sendOffer();
-    } else {
-      console.log('Received answer from receiver', data.text);
-      remoteAnswer = data.text;
-      setAnswer();
+    switch (data.action) {
+      case 'hello':
+        handleHello(data);
+        break;
+      case 'answer':
+        handleAnswer(data);
+        break;
+      case 'ice':
+        handleIce(data);
+        break;
     }
   });
 });
