@@ -1,66 +1,51 @@
+var remoteVideo = document.getElementById('remoteVideo');
+
 var socket = io.connect('http://localhost:3000');
+var localAddr = '10.0.0.2';    
+var remoteAddr = '10.0.0.1';   
+var localPC;                   
+var remoteOffer;               
+var localAnswer;               
 
-var localVideo = document.getElementById('localVideo');
-var localStream;
-var localPC;
-var offerOptions = {
-  offerToReceiverVideo: 1
-};
-var offer;
-var myAddr = '10.0.0.1';
-var peerAddr; 
-
-function sendOffer() {
-  if (navigator.getUserMedia) {
-    navigator.getUserMedia({video:true}, onSuccess, onFail);
-  } else {
-    alert('Does not support getUserMedia()');
-  }
-
-  var servers = null;
-  localPC = new RTCPeerConnection(servers);
-}
-
-function onSuccess(stream) {
-  localVideo.srcObject = stream;
-  localStream = stream;
-
-  localPC.createOffer(
-    offerOptions
-  ).then(
-    gotDescription
-  );
-}
-
-function onFail() {
-  alert('Failed to get user media!');
-}
-
-function message(text) {
-  this.from = myAddr;
-  this.to = peerAddr;
-  this.text = text;
-}
-
-function gotDescription(description) {
-  offer = description;
-  setOffer();
-  socket.emit('msg', new message(offer.sdp));
+function message(text) {       
+  this.from = localAddr;       
+  this.to = remoteAddr;        
+  this.text = text;            
 }
 
 function setOffer() {
-  localPC.setLocalDescription(offer);
+  var servers = null;
+  localPC = new RTCPeerConnection(servers);
+  localPC.setRemoteDescription(remoteOffer);
+  localPC.onaddstream = gotRemoteStream;
+}
+
+function gotRemoteStream(e) {
+  console.log('Got remote stream');
+  remoteVideo.srcObject = e.stream;
+}
+
+function setAnswer() {
+  localPC.setLocalDescription(localAnswer);
+}
+
+function sendAnswer() {
+  localPC.createAnswer()
+    .then(function(answer) {
+      console.log('Created answer', answer);
+      localAnswer = answer;
+      setAnswer();
+      socket.emit('msg', new message(localAnswer));
+    });
 }
 
 socket.on('connect', function() {
-  socket.emit('addr', myAddr);
+  socket.emit('addr', localAddr);
+  socket.emit('msg', new message('Request from receiver'));
   socket.on('msg', function(data) {
-    if (!peerAddr) {
-      peerAddr = data.from;
-      sendOffer();
-    } else {
-      console.log('Received answer from sender', data.text);
-    }
+    console.log('Received offer from sender', data.text);
+    remoteOffer = data.text;
+    setOffer();
+    sendAnswer();
   });
 });
-
