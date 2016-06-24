@@ -1,28 +1,35 @@
 var remoteVideo = document.getElementById('remoteVideo');
 
 var socket = io.connect('http://localhost:3000');
-var localAddr = '10.0.0.2';    
-var remoteAddr = '10.0.0.1';   
-var localPC;                   
-var remoteOffer;               
-var localAnswer;               
+var localAddr = '10.0.0.2';
+var remoteAddr = '10.0.0.1';
+var localPC;
+var remoteOffer;
+var localAnswer;
 
-function message(text) {       
-  this.from = localAddr;       
-  this.to = remoteAddr;        
-  this.text = text;            
+function message(action, text) {
+  this.from = localAddr;
+  this.to = remoteAddr;
+  this.action = action;
+  this.text = text;
 }
 
 function setOffer() {
-  var servers = null;
-  localPC = new RTCPeerConnection(servers);
+  localPC = new RTCPeerConnection(null);
   localPC.setRemoteDescription(remoteOffer);
   localPC.onaddstream = gotRemoteStream;
+
+  localPC.onicecandidate = function(e) {
+    if (e.candidate) {
+      socket.emit('msg', new message('ice', e.candidate));
+    }
+  }
 }
 
 function gotRemoteStream(e) {
   console.log('Got remote stream');
   remoteVideo.srcObject = e.stream;
+  remoteVideo.play();
 }
 
 function setAnswer() {
@@ -35,17 +42,32 @@ function sendAnswer() {
       console.log('Created answer', answer);
       localAnswer = answer;
       setAnswer();
-      socket.emit('msg', new message(localAnswer));
+      socket.emit('msg', new message('answer', localAnswer));
     });
+}
+
+function handleOffer(data) {
+  console.log('Received offer from sender', data.text);
+  remoteOffer = data.text;
+  setOffer();
+  sendAnswer();
+}
+
+function handleIce(data) {
+  localPC.addIceCandidate(new RTCIceCandidate(data.text));
 }
 
 socket.on('connect', function() {
   socket.emit('addr', localAddr);
-  socket.emit('msg', new message('Request from receiver'));
+  socket.emit('msg', new message('hello', 'Hello from receiver'));
   socket.on('msg', function(data) {
-    console.log('Received offer from sender', data.text);
-    remoteOffer = data.text;
-    setOffer();
-    sendAnswer();
+    switch (data.action) {
+      case 'offer':
+        handleOffer(data);
+        break;
+      case 'ice':
+        handleIce(data);
+        break;
+    }
   });
 });
