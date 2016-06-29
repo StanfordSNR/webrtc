@@ -35,6 +35,7 @@ function client(socket) {
 }
 
 function getAddr(description) {
+  console.log('Got an offer from 10.0.0.1:2222');
   return '10.0.0.1:2222';
 }
 
@@ -49,6 +50,9 @@ io.on('connection', function(socket) {
     if (data.action === 'offer') {
       clients[data.from].offer = data;
       clients[data.from].addr = getAddr(data.text);
+    } else if (data.action === 'request') {
+      var offer = clients[data.to].offer;
+      clients[data.from].socket.emit('msg', offer); 
     } else {
       clients[data.to].socket.emit('msg', data);
     }
