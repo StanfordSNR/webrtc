@@ -15,6 +15,21 @@ function message(action, text) {
   this.text = text;
 }
 
+function init() {
+  localPC = new RTCPeerConnection(null);
+  localPC.onaddstream = gotRemoteStream;
+  localPC.onicecandidate = function(e) {
+    if (e.candidate) {
+      socket.emit('msg', new message('ice', e.candidate));
+    }
+  }
+}
+
+function gotRemoteStream(e) {
+  remoteVideo.srcObject = e.stream;
+  remoteVideo.play();
+}
+
 function sendRequest() {
   socket.emit('msg', new message('request', 'Request from receiver'));
 
@@ -29,6 +44,10 @@ function handleOffer(data) {
   sendAnswer();
 }
 
+function setOffer() {
+  localPC.setRemoteDescription(remoteOffer);
+}
+
 function sendAnswer() {
   localPC.createAnswer()
     .then(function(answer) {
@@ -40,29 +59,26 @@ function sendAnswer() {
     });
 }
 
-function setOffer() {
-  localPC = new RTCPeerConnection(null);
-  localPC.setRemoteDescription(remoteOffer);
-  localPC.onaddstream = gotRemoteStream;
-}
-
-function gotRemoteStream(e) {
-  remoteVideo.srcObject = e.stream;
-  remoteVideo.play();
-}
-
 function setAnswer() {
   localPC.setLocalDescription(localAnswer);
 }
 
+function handleIce(data) {
+  localPC.addIceCandidate(new RTCIceCandidate(data.text));
+}
+
 socket.on('connect', function() {
   socket.emit('id', localId);
+  init();
   sendRequest();
 
   socket.on('msg', function(data) {
     switch (data.action) {
       case 'offer':
         handleOffer(data);
+        break;
+      case 'ice':
+        handleIce(data);
         break;
     }
   });

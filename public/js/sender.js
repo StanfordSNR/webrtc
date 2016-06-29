@@ -19,6 +19,8 @@ function message(action, text) {
 }
 
 function sendOffer() {
+  localPC = new RTCPeerConnection(null);
+
   if (navigator.getUserMedia) {
     navigator.getUserMedia({video:true}, onSuccess, onFail);
   } else {
@@ -29,8 +31,6 @@ function sendOffer() {
 function onSuccess(stream) {
   localVideo.srcObject = stream;
   localStream = stream;
-
-  localPC = new RTCPeerConnection(null);
   localPC.addStream(localStream);
 
   localPC.createOffer(offerOptions)
@@ -56,10 +56,20 @@ function handleAnswer(data) {
   remoteId = data.from;
   remoteAnswer = data.text;
   setAnswer();
+
+  localPC.onicecandidate = function(e) {
+    if (e.candidate) {
+      socket.emit('msg', new message('ice', e.candidate));
+    }
+  }
 }
 
 function setAnswer() {
   localPC.setRemoteDescription(remoteAnswer);
+}
+
+function handleIce(data) {
+  localPC.addIceCandidate(new RTCIceCandidate(data.text));
 }
 
 socket.on('connect', function() {
@@ -70,6 +80,9 @@ socket.on('connect', function() {
     switch (data.action) {
       case 'answer':
         handleAnswer(data);
+        break;
+      case 'ice':
+        handleIce(data);
         break;
     }
   });
