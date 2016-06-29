@@ -32,13 +32,9 @@ function gotRemoteStream(e) {
 
 function sendRequest() {
   socket.emit('msg', new message('request', 'Request from receiver'));
-
-  console.log('Sent request');
 }
 
 function handleOffer(data) {
-  console.log('Received offer', data.text);
-
   remoteOffer = data.text;
   setOffer();
   sendAnswer();
@@ -54,8 +50,6 @@ function sendAnswer() {
       localAnswer = answer;
       setAnswer();
       socket.emit('msg', new message('answer', localAnswer));
-
-      console.log('Sent answer', answer);
     });
 }
 

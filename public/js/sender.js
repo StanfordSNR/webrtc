@@ -38,8 +38,6 @@ function onSuccess(stream) {
       localOffer = offer;
       setOffer();
       socket.emit('msg', new message('offer', localOffer));
-
-      console.log('Sent offer', offer);
     });
 }
 
@@ -52,7 +50,6 @@ function setOffer() {
 }
 
 function handleAnswer(data) {
-  console.log('Received answer', data.text);
   remoteId = data.from;
   remoteAnswer = data.text;
   setAnswer();
