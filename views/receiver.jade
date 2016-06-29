@@ -1,9 +1,9 @@
 doctype html
 html
   body
+    input#localId(type='hidden', value=localId)
+    input#remoteId(type='hidden', value=remoteId)
     video#remoteVideo(autoplay)
     script(src='/socket.io/socket.io.js')
     script(src='js/adapter.js')
     script(src='js/receiver.js')
-    input#localId(type='hidden', value=localId)
-    input#remoteId(type='hidden', value=remoteId)

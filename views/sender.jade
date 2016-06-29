@@ -1,8 +1,8 @@
 doctype html
 html
   body
+    input#localId(type='hidden', value=localId)
     video#localVideo(autoplay)
     script(src='/socket.io/socket.io.js')
     script(src='js/adapter.js')
     script(src='js/sender.js')
-    input#localId(type='hidden', value=localId)
