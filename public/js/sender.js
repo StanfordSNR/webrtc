@@ -1,9 +1,8 @@
-var localVideo = document.getElementById('localVideo');  
-var localStream;
-
 var socket = io.connect('http://localhost:3000');
-var localAddr = '10.0.0.1';
-var remoteAddr; 
+var localId = document.getElementById('localId').value;
+var remoteId = ''; 
+
+var localStream;
 
 var localPC;
 var localOffer;
@@ -13,21 +12,13 @@ var offerOptions = {
 };
 
 function message(action, text) {
-  this.from = localAddr;
-  this.to = remoteAddr;
+  this.from = localId;
+  this.to = remoteId;
   this.action = action;
   this.text = text;
 }
 
 function sendOffer() {
-  localPC = new RTCPeerConnection(null);
-
-  localPC.onicecandidate = function(e) {
-    if (e.candidate) {
-      socket.emit('msg', new message('ice', e.candidate));
-    }
-  }
-
   if (navigator.getUserMedia) {
     navigator.getUserMedia({video:true}, onSuccess, onFail);
   } else {
@@ -38,14 +29,17 @@ function sendOffer() {
 function onSuccess(stream) {
   localVideo.srcObject = stream;
   localStream = stream;
+
+  localPC = new RTCPeerConnection(null);
   localPC.addStream(localStream);
 
   localPC.createOffer(offerOptions)
     .then(function(offer) {
-      console.log('Created offer', offer);
       localOffer = offer;
       setOffer();
       socket.emit('msg', new message('offer', localOffer));
+
+      console.log('Sent offer', offer);
     });
 }
 
@@ -57,39 +51,25 @@ function setOffer() {
   localPC.setLocalDescription(localOffer);
 }
 
-function setAnswer() {
-  localPC.setRemoteDescription(remoteAnswer);
-}
-
-function handleHello(data) {
-  if (!remoteAddr) {
-    remoteAddr = data.from;
-    sendOffer();
-  }
-}
-
 function handleAnswer(data) {
-  console.log('Received answer from receiver', data.text);
+  console.log('Received answer', data.text);
+  remoteId = data.from;
   remoteAnswer = data.text;
   setAnswer();
 }
 
-function handleIce(data) {
-  localPC.addIceCandidate(new RTCIceCandidate(data.text));
+function setAnswer() {
+  localPC.setRemoteDescription(remoteAnswer);
 }
 
 socket.on('connect', function() {
-  socket.emit('addr', localAddr);
+  socket.emit('id', localId);
+  sendOffer();
+
   socket.on('msg', function(data) {
     switch (data.action) {
-      case 'hello':
-        handleHello(data);
-        break;
       case 'answer':
         handleAnswer(data);
-        break;
-      case 'ice':
-        handleIce(data);
         break;
     }
   });
