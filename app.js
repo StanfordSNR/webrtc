@@ -8,12 +8,15 @@ app.set('views', __dirname + '/views');
 app.set('view engine', 'jade');
 app.use(express.static(__dirname + '/public'));
 
+var g_id = 0;
 app.get('/receiver', function(req, res) {
-  res.render('receiver', {'addr': req.query.addr});
+  g_id++;
+  res.render('receiver', {'id':g_id, 'addr':req.query.addr});
 });
 
 app.get('/sender', function(req, res) {
-  res.render('sender');
+  g_id++;
+  res.render('sender', {'id':g_id});
 });
 
 var clients = {};
