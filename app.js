@@ -9,7 +9,7 @@ app.set('view engine', 'jade');
 app.use(express.static(__dirname + '/public'));
 
 app.get('/receiver', function(req, res) {
-  res.render('receiver');
+  res.render('receiver', {'addr': req.query.addr});
 });
 
 app.get('/sender', function(req, res) {
