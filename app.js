@@ -11,12 +11,12 @@ app.use(express.static(__dirname + '/public'));
 var g_id = 0;
 app.get('/receiver', function(req, res) {
   g_id++;
-  res.render('receiver', {'id':g_id, 'addr':req.query.addr});
+  res.render('receiver', {'localId':g_id, 'peerAddr':req.query.peerAddr});
 });
 
 app.get('/sender', function(req, res) {
   g_id++;
-  res.render('sender', {'id':g_id});
+  res.render('sender', {'localId':g_id});
 });
 
 var clients = {};
