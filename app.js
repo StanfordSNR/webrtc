@@ -47,14 +47,17 @@ io.on('connection', function(socket) {
   socket.on('msg', function(data) {
     console.log(data);
 
-    if (data.action === 'offer') {
-      clients[data.from].offer = data;
-      clients[data.from].addr = getAddr(data.text);
-    } else if (data.action === 'request') {
-      var offer = clients[data.to].offer;
-      clients[data.from].socket.emit('msg', offer); 
-    } else {
-      clients[data.to].socket.emit('msg', data);
+    switch(data.action) {
+      case 'offer':
+        clients[data.from].offer = data;
+        clients[data.from].addr = getAddr(data.text);
+        break;
+      case 'request':
+        var offer = clients[data.to].offer;
+        clients[data.from].socket.emit('msg', offer); 
+        break;
+      default:
+        clients[data.to].socket.emit('msg', data);
     }
   });
 });
