@@ -26,6 +26,7 @@ function getIdByAddr(addr) {
     if (clients[id].addr === addr)
       return id;
   }
+  alert('Cannot find sender with peer address!');
 }
 
 function client(socket) {
@@ -35,8 +36,18 @@ function client(socket) {
 }
 
 function getAddr(description) {
-  console.log('Got an offer from 10.0.0.1:2222');
-  return '10.0.0.1:2222';
+  var str = description.sdp;
+
+  var ip_patt = /o=.+ IN IP[4,6] (.+)\r\n/;
+  var ip = str.match(ip_patt)[1];
+  
+  var port_patt = /m=video (.+) UDP/;
+  var port = str.match(port_patt)[1];
+
+  var addr = ip + ':' + port;
+  
+  console.log(addr);
+  return addr;
 }
 
 io.on('connection', function(socket) {
@@ -45,8 +56,6 @@ io.on('connection', function(socket) {
   });
 
   socket.on('msg', function(data) {
-    console.log(data);
-
     switch(data.action) {
       case 'offer':
         clients[data.from].offer = data;
