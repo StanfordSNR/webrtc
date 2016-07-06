@@ -48,7 +48,7 @@ function getAddr(description) {
 
   var addr = ip + ':' + port;
   
-  console.log(addr);
+  // console.log(addr);
   return addr;
 }
 
