@@ -10,15 +10,15 @@ app.set('views', __dirname + '/views');
 app.set('view engine', 'jade');
 app.use(express.static(__dirname + '/public'));
 
+app.get('/sender', function(req, res) {
+  g_id++;
+  res.render('sender', {'localId':g_id});
+});
+
 app.get('/receiver', function(req, res) {
   g_id++;
   res.render('receiver', {'localId':g_id, 
     'remoteId':getIdByAddr(req.query.peerAddr)});
-});
-
-app.get('/sender', function(req, res) {
-  g_id++;
-  res.render('sender', {'localId':g_id});
 });
 
 function getIdByAddr(addr) {
@@ -26,7 +26,9 @@ function getIdByAddr(addr) {
     if (clients[id].addr === addr)
       return id;
   }
-  alert('Cannot find sender with peer address!');
+
+  return 1;
+  // alert('Cannot find sender with peer address!');
 }
 
 function client(socket) {
