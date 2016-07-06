@@ -27,7 +27,7 @@ function getIdByAddr(addr) {
       return id;
   }
 
-  return 1;
+  return g_id - 1;
   // alert('Cannot find sender with peer address!');
 }
 
