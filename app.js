@@ -7,7 +7,7 @@ var g_id = 0;
 
 server.listen(3000);
 app.set('views', __dirname + '/views');
-app.set('view engine', 'jade');
+app.set('view engine', 'pug');
 app.use(express.static(__dirname + '/public'));
 
 app.get('/sender', function(req, res) {
