@@ -1,9 +1,7 @@
-var socket = io.connect('http://localhost:3000');
+var socket = io.connect(window.location.origin);
 var localId = document.getElementById('localId').value;
 var remoteId = ''; 
-
-var localStream;
-
+var localVideo = document.getElementById('localVideo');
 var localPC;
 var localOffer;
 var remoteAnswer;
@@ -30,8 +28,12 @@ function sendOffer() {
 
 function onSuccess(stream) {
   localVideo.srcObject = stream;
-  localStream = stream;
-  localPC.addStream(localStream);
+  localPC.addStream(stream);
+  localPC.onicecandidate = function(e) {
+    if (e.candidate) {
+      socket.emit('msg', new message('ice', e.candidate));
+    }
+  }
 
   localPC.createOffer(offerOptions)
     .then(function(offer) {
@@ -50,15 +52,8 @@ function setOffer() {
 }
 
 function handleAnswer(data) {
-  remoteId = data.from;
   remoteAnswer = data.text;
   setAnswer();
-
-  localPC.onicecandidate = function(e) {
-    if (e.candidate) {
-      socket.emit('msg', new message('ice', e.candidate));
-    }
-  }
 }
 
 function setAnswer() {
@@ -71,10 +66,13 @@ function handleIce(data) {
 
 socket.on('connect', function() {
   socket.emit('id', localId);
-  sendOffer();
 
   socket.on('msg', function(data) {
     switch (data.action) {
+      case 'request':
+        remoteId = data.from;
+        sendOffer();
+        break;
       case 'answer':
         handleAnswer(data);
         break;

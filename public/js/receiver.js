@@ -1,9 +1,7 @@
-var socket = io.connect('http://localhost:3000');
+var socket = io.connect(window.location.origin);
 var localId = document.getElementById('localId').value;
-var remoteId = document.getElementById('remoteId').value;
-
+var remoteId = '0';
 var remoteVideo = document.getElementById('remoteVideo');
-
 var localPC;
 var remoteOffer;
 var localAnswer;
