@@ -3,8 +3,14 @@ var localId = document.getElementById('localId').value;
 var remoteId = '0';
 var remoteVideo = document.getElementById('remoteVideo');
 var localPC;
-var remoteOffer;
-var localAnswer;
+
+var config = {
+  iceServers: [
+    {
+      url: 'stun:stun.l.google.com:19302'
+    }
+  ]
+};
 
 function message(action, text) {
   this.from = localId;
@@ -13,14 +19,23 @@ function message(action, text) {
   this.text = text;
 }
 
-function init() {
-  localPC = new RTCPeerConnection(null);
-  localPC.onaddstream = gotRemoteStream;
+function handleOffer(data) {
+  localPC = new RTCPeerConnection(config);
+
   localPC.onicecandidate = function(e) {
     if (e.candidate) {
+      console.log("ICE gathering state change: " + e.target.iceGatheringState);
       socket.emit('msg', new message('ice', e.candidate));
     }
   }
+
+  localPC.oniceconnectionstatechange = function(e) {
+    console.log("ICE connection state change: " + e.target.iceConnectionState);
+  }
+
+  localPC.setRemoteDescription(data.text);
+  localPC.onaddstream = gotRemoteStream;
+  sendAnswer();
 }
 
 function gotRemoteStream(e) {
@@ -28,41 +43,28 @@ function gotRemoteStream(e) {
   remoteVideo.play();
 }
 
-function sendRequest() {
-  socket.emit('msg', new message('request', 'Request from receiver'));
-}
-
-function handleOffer(data) {
-  remoteOffer = data.text;
-  setOffer();
-  sendAnswer();
-}
-
-function setOffer() {
-  localPC.setRemoteDescription(remoteOffer);
-}
-
 function sendAnswer() {
   localPC.createAnswer()
     .then(function(answer) {
-      localAnswer = answer;
-      setAnswer();
-      socket.emit('msg', new message('answer', localAnswer));
+      localPC.setLocalDescription(answer);
+      socket.emit('msg', new message('answer', answer));
     });
 }
 
-function setAnswer() {
-  localPC.setLocalDescription(localAnswer);
-}
-
 function handleIce(data) {
-  localPC.addIceCandidate(new RTCIceCandidate(data.text));
+  localPC.addIceCandidate(new RTCIceCandidate(data.text)).then(
+    function() {
+      console.log('addIceCandidate success');
+    },
+    function(err) {
+      console.log('Failed to add ICE candidate: ' + err.toString());
+    }
+  );
 }
 
 socket.on('connect', function() {
   socket.emit('id', localId);
-  init();
-  sendRequest();
+  socket.emit('msg', new message('request', 'Request from receiver'));
 
   socket.on('msg', function(data) {
     switch (data.action) {

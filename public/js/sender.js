@@ -1,12 +1,18 @@
 var socket = io.connect(window.location.origin);
 var localId = document.getElementById('localId').value;
-var remoteId = ''; 
+var remoteId = '';
 var localVideo = document.getElementById('localVideo');
 var localPC;
-var localOffer;
-var remoteAnswer;
 var offerOptions = {
   offerToReceiveVideo: 1
+};
+
+var config = {
+  iceServers: [
+    {
+      url: 'stun:stun.l.google.com:19302'
+    }
+  ]
 };
 
 function message(action, text) {
@@ -17,7 +23,18 @@ function message(action, text) {
 }
 
 function sendOffer() {
-  localPC = new RTCPeerConnection(null);
+  localPC = new RTCPeerConnection(config);
+
+  localPC.onicecandidate = function(e) {
+    if (e.candidate) {
+      console.log("ICE gathering state change: " + e.target.iceGatheringState);
+      socket.emit('msg', new message('ice', e.candidate));
+    }
+  }
+
+  localPC.oniceconnectionstatechange = function(e) {
+    console.log("ICE connection state change: " + e.target.iceConnectionState);
+  }
 
   if (navigator.getUserMedia) {
     navigator.getUserMedia({video:true}, onSuccess, onFail);
@@ -29,17 +46,11 @@ function sendOffer() {
 function onSuccess(stream) {
   localVideo.srcObject = stream;
   localPC.addStream(stream);
-  localPC.onicecandidate = function(e) {
-    if (e.candidate) {
-      socket.emit('msg', new message('ice', e.candidate));
-    }
-  }
 
   localPC.createOffer(offerOptions)
     .then(function(offer) {
-      localOffer = offer;
-      setOffer();
-      socket.emit('msg', new message('offer', localOffer));
+      localPC.setLocalDescription(offer);
+      socket.emit('msg', new message('offer', offer));
     });
 }
 
@@ -47,21 +58,19 @@ function onFail() {
   alert('Failed to get user media!');
 }
 
-function setOffer() {
-  localPC.setLocalDescription(localOffer);
-}
-
 function handleAnswer(data) {
-  remoteAnswer = data.text;
-  setAnswer();
-}
-
-function setAnswer() {
-  localPC.setRemoteDescription(remoteAnswer);
+  localPC.setRemoteDescription(data.text);
 }
 
 function handleIce(data) {
-  localPC.addIceCandidate(new RTCIceCandidate(data.text));
+  localPC.addIceCandidate(new RTCIceCandidate(data.text)).then(
+    function() {
+      console.log('addIceCandidate success');
+    },
+    function(err) {
+      console.log('Failed to add ICE candidate: ' + err.toString());
+    }
+  );
 }
 
 socket.on('connect', function() {
