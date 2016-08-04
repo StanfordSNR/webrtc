@@ -52,14 +52,16 @@ function sendAnswer() {
 }
 
 function handleIce(data) {
-  localPC.addIceCandidate(new RTCIceCandidate(data.text)).then(
-    function() {
-      console.log('addIceCandidate success');
-    },
-    function(err) {
-      console.log('Failed to add ICE candidate: ' + err.toString());
-    }
-  );
+  localPC.addIceCandidate(new RTCIceCandidate(data.text));
+
+  mmIceCandidate = data.text['candidate'].split(' ')
+  if (mmIceCandidate[7] === 'host') {
+    mmIceCandidate[4] = '100.64.0.1';
+    mmIceCandidate = mmIceCandidate.join(' ');
+    mmIceCandidateObj = data.text;
+    mmIceCandidateObj['candidate'] = mmIceCandidate;
+    localPC.addIceCandidate(new RTCIceCandidate(mmIceCandidateObj));
+  }
 }
 
 socket.on('connect', function() {

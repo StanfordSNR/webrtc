@@ -63,14 +63,7 @@ function handleAnswer(data) {
 }
 
 function handleIce(data) {
-  localPC.addIceCandidate(new RTCIceCandidate(data.text)).then(
-    function() {
-      console.log('addIceCandidate success');
-    },
-    function(err) {
-      console.log('Failed to add ICE candidate: ' + err.toString());
-    }
-  );
+  localPC.addIceCandidate(new RTCIceCandidate(data.text));
 }
 
 socket.on('connect', function() {
