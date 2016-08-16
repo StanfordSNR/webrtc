@@ -5,7 +5,12 @@ var io = require('socket.io')(server);
 var sockets = {};
 var g_id = 0;
 
-server.listen(3000);
+if (process.argv.length != 3) {
+	console.log("Usage: nodejs app.js <port-number>");
+	process.exit(-1);
+}
+
+server.listen(Number(process.argv[2]));
 app.set('views', __dirname + '/views');
 app.set('view engine', 'pug');
 app.use(express.static(__dirname + '/public'));
