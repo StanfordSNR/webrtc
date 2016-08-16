@@ -56,11 +56,16 @@ function handleIce(data) {
 
   mmIceCandidate = data.text['candidate'].split(' ')
   if (mmIceCandidate[7] === 'host') {
-    mmIceCandidate[4] = '100.64.0.1';
-    mmIceCandidate = mmIceCandidate.join(' ');
-    mmIceCandidateObj = data.text;
-    mmIceCandidateObj['candidate'] = mmIceCandidate;
-    localPC.addIceCandidate(new RTCIceCandidate(mmIceCandidateObj));
+    url = window.location.href;
+    url = url.split('/')[2];
+    host_ip = url.split(':')[0];
+    if (host_ip != mmIceCandidate[4]) {
+      mmIceCandidate[4] = host_ip;
+      mmIceCandidate = mmIceCandidate.join(' ');
+      mmIceCandidateObj = data.text;
+      mmIceCandidateObj['candidate'] = mmIceCandidate;
+      localPC.addIceCandidate(new RTCIceCandidate(mmIceCandidateObj));
+    }
   }
 }
 
