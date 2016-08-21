@@ -4,10 +4,13 @@ var remoteId = '0';
 var remoteVideo = document.getElementById('remoteVideo');
 var localPC;
 
+var host_url = window.location.href.split('/')[2];
+var host_ip = host_url.split(':')[0];
+
 var config = {
   iceServers: [
     {
-      url: 'stun:stun.l.google.com:19302'
+      url: 'stun:' + host_ip + ':3478'
     }
   ]
 };
@@ -53,20 +56,6 @@ function sendAnswer() {
 
 function handleIce(data) {
   localPC.addIceCandidate(new RTCIceCandidate(data.text));
-
-  mmIceCandidate = data.text['candidate'].split(' ')
-  if (mmIceCandidate[7] === 'host') {
-    url = window.location.href;
-    url = url.split('/')[2];
-    host_ip = url.split(':')[0];
-    if (host_ip != mmIceCandidate[4]) {
-      mmIceCandidate[4] = host_ip;
-      mmIceCandidate = mmIceCandidate.join(' ');
-      mmIceCandidateObj = data.text;
-      mmIceCandidateObj['candidate'] = mmIceCandidate;
-      localPC.addIceCandidate(new RTCIceCandidate(mmIceCandidateObj));
-    }
-  }
 }
 
 socket.on('connect', function() {
