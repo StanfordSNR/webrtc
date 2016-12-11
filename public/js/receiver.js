@@ -4,14 +4,6 @@ var remoteId = '0';
 var remoteVideo = document.getElementById('remoteVideo');
 var localPC;
 
-var config = {
-  iceServers: [
-    {
-      url: 'stun:stun.l.google.com:19302'
-    }
-  ]
-};
-
 function message(action, text) {
   this.from = localId;
   this.to = remoteId;
@@ -20,7 +12,7 @@ function message(action, text) {
 }
 
 function handleOffer(data) {
-  localPC = new RTCPeerConnection(config);
+  localPC = new RTCPeerConnection();
 
   localPC.onicecandidate = function(e) {
     if (e.candidate) {

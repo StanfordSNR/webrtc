@@ -7,14 +7,6 @@ var offerOptions = {
   offerToReceiveVideo: 1
 };
 
-var config = {
-  iceServers: [
-    {
-      url: 'stun:stun.l.google.com:19302'
-    }
-  ]
-};
-
 function message(action, text) {
   this.from = localId;
   this.to = remoteId;
@@ -23,7 +15,7 @@ function message(action, text) {
 }
 
 function sendOffer() {
-  localPC = new RTCPeerConnection(config);
+  localPC = new RTCPeerConnection();
 
   localPC.onicecandidate = function(e) {
     if (e.candidate) {
