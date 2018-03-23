@@ -6,8 +6,8 @@ var sockets = {};
 var g_id = 0;
 
 if (process.argv.length != 3) {
-	console.log("Usage: nodejs app.js <port-number>");
-	process.exit(-1);
+  console.log("Usage: nodejs app.js <port-number>");
+  process.exit(-1);
 }
 
 server.listen(Number(process.argv[2]));
@@ -28,12 +28,34 @@ function client(socket) {
   this.socket = socket;
 }
 
+
+pending_msgs = {};
+
 io.on('connection', function(socket) {
   socket.on('id', function(id) {
     sockets[id] = socket;
+
+    if (id in pending_msgs) {
+      for (var i = 0; i < pending_msgs[id].length; i++) {
+        socket.emit('msg', pending_msgs[id][i]);
+      }
+
+      delete pending_msgs[id];
+    }
+
   });
 
   socket.on('msg', function(data) {
     sockets[data.to].emit('msg', data);
+
+    if (data.to in sockets) {
+      sockets[data.to].emit('msg', data);
+    } else {
+      if (!(data.to in pending_msgs)) {
+        pending_msgs[data.to] = [];
+      }
+
+      pending_msgs[data.to].push(data);
+    }
   });
 });
