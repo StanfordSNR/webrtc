@@ -28,7 +28,6 @@ function client(socket) {
   this.socket = socket;
 }
 
-
 pending_msgs = {};
 
 io.on('connection', function(socket) {
@@ -42,12 +41,9 @@ io.on('connection', function(socket) {
 
       delete pending_msgs[id];
     }
-
   });
 
   socket.on('msg', function(data) {
-    sockets[data.to].emit('msg', data);
-
     if (data.to in sockets) {
       sockets[data.to].emit('msg', data);
     } else {
